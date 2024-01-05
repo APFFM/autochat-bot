@@ -102,8 +102,6 @@
                     alt="Flowbite Logo" />
                 <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Autochat Bot</span>
             </a>
-
-
         </div>
     </nav>
 
@@ -111,15 +109,14 @@
         <div class="box">
             <div class="upper" id="upperid">
                 <span class="downwarning">Type your message in box below.</span>
-                
-
+                <!-- Messages will be displayed here -->
             </div>
 
             <div class="bottom">
-                 <form id="userinputform">
+                <form id="userinputform">
+                    <!-- Chat input form here -->
                     <label for="chat" class="sr-only">Your message</label>
                     <div class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-
                         <textarea id="userinput" rows="1"
                             class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Your message..." required></textarea>
@@ -136,13 +133,19 @@
                         </button>
                     </div>
                 </form>
-              
-                <span class="downwarning">Remember Your Chat will not be saved, it will be lost upon reloading.</span>
+
+                <!-- Add the file upload form from the second code -->
+                <form method="post" action="/upload" enctype="multipart/form-data">
+                    <input type="file" name="file">
+                    <input type="submit" value="Upload">
+                </form>
+
+                <span class="downwarning">Remember Your Chat will not be saved; it will be lost upon reloading.</span>
             </div>
         </div>
     </div>
 
-
+    
     <script>
         // for scrolling messages
         function scrollToBottom() {

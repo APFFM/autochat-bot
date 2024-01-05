@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, render_template,jsonify,request
 from flask_cors import CORS
 import requests,openai,os
@@ -6,7 +8,11 @@ from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryBufferMemory
-llm = OpenAI()
+
+import os
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+llm = OpenAI(api_key=openai_api_key)
 memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
 app = Flask(__name__)
 CORS(app)
