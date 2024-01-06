@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -92,26 +91,22 @@
         }
     </style>
 </head>
-
 <body>
-
     <nav class="bg-white border-gray-200 dark:bg-gray-900">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
             <a href="#" class="flex items-center">
-                <img src="https://seeklogo.com/images/O/open-ai-logo-8B9BFEDC26-seeklogo.com.png" class="h-8 mr-3"
+                <img src="https://media.licdn.com/dms/image/C4E03AQEjkiYBYGM8FQ/profile-displayphoto-shrink_400_400/0/1628778798778?e=1709769600&v=beta&t=3gBmJ9GTFFYjT5HkmF4blIo7AxS2lD4fYMJQQehd38I" class="h-8 mr-3"
                     alt="Flowbite Logo" />
                 <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Autochat Bot</span>
             </a>
         </div>
     </nav>
-
     <div class="container">
         <div class="box">
             <div class="upper" id="upperid">
                 <span class="downwarning">Type your message in box below.</span>
                 <!-- Messages will be displayed here -->
             </div>
-
             <div class="bottom">
                 <form id="userinputform">
                     <!-- Chat input form here -->
@@ -133,116 +128,119 @@
                         </button>
                     </div>
                 </form>
-
                 <!-- Add the file upload form from the second code -->
                 <form method="post" action="/upload" enctype="multipart/form-data">
                     <input type="file" name="file">
                     <input type="submit" value="Upload">
                 </form>
-
                 <span class="downwarning">TEST Remember Your Chat will not be saved; it will be lost upon reloading.</span>
             </div>
         </div>
     </div>
-
-    
     <script>
         // for scrolling messages
         function scrollToBottom() {
             var div = document.getElementById("upperid");
             div.scrollTop = div.scrollHeight;
         }
-        scrollToBottom()
+        scrollToBottom();
 
+        // Adding event listener for form submission
         document.getElementById("userinputform").addEventListener("submit", function (event) {
             event.preventDefault();
             formsubmitted();
         });
 
-        // sending request to python server
+        // Function to handle form submission
         const formsubmitted = async () => {
-            let userinput = document.getElementById('userinput').value
-            let sendbtn = document.getElementById('sendbtn')
-            let userinputarea = document.getElementById('userinput')
-            let upperdiv = document.getElementById('upperid')
-           
+            let userinput = document.getElementById('userinput').value;
+            let sendbtn = document.getElementById('sendbtn');
+            let userinputarea = document.getElementById('userinput');
+            let upperdiv = document.getElementById('upperid');
+            let fileInput = document.getElementById('fileinput'); // Assuming you have an input for files with this id
 
-            upperdiv.innerHTML = upperdiv.innerHTML + `<div class="message">
+            // Display user message
+            upperdiv.innerHTML += `<div class="message">
                 <div class="usermessagediv">
-                        <div class="usermessage">
-                            ${userinput}
-                        </div>
+                    <div class="usermessage">
+                        ${userinput}
+                    </div>
                 </div>
-            </div>`
-            sendbtn.disabled = true
-            userinputarea.disabled = true
-            scrollToBottom()
-            document.getElementById('userinput').value = ""
-            document.getElementById('userinput').placeholder = "Wait . . ."
+            </div>`;
 
+            // Disable input and button while processing
+            sendbtn.disabled = true;
+            userinputarea.disabled = true;
+            scrollToBottom();
+
+            // Clear input fields
+            document.getElementById('userinput').value = "";
+            document.getElementById('userinput').placeholder = "Wait . . .";
+
+            // Prepare form data for sending
+            let formData = new FormData();
+            formData.append('data', userinput);
+            if (fileInput.files[0]) {
+                formData.append('file', fileInput.files[0]);
+            }
+
+            // Send request to server
             const response = await fetch("http://127.0.0.1:5000/data", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ data: userinput })
-
-
+                body: formData // Sending form data instead of JSON
             });
-            let json = await response.json();
 
-            document.getElementById('userinput').placeholder = "Your message..."
-   
+            // Handling response from server
+            let json = await response.json();
+            document.getElementById('userinput').placeholder = "Your message...";
 
             if (json.response) {
-                let message = json.message
-                message = message.toString()
-      
-                upperdiv.innerHTML = upperdiv.innerHTML + `<div class="message">
+                // Successful response with message
+                displayMessage(json.message);
+            } else {
+                // Error or different response
+                displayError(json.message);
+            }
+
+            // Reset input and button
+            sendbtn.disabled = false;
+            userinputarea.disabled = false;
+            scrollToBottom();
+        };
+
+        // Function to display messages with typing effect
+        function displayMessage(message) {
+            let upperdiv = document.getElementById('upperid');
+            upperdiv.innerHTML += `<div class="message">
                 <div class="appmessagediv">
-                    <div class="appmessage" id="temp">
-                        
-                    </div>
+                    <div class="appmessage" id="temp-message"></div>
                 </div>
-            </div>`
-                let temp = document.getElementById('temp')
-                let index = 0
-                function displayNextLetter() {
-                    scrollToBottom()
-                    if (index < message.length) {
-                        temp.innerHTML = temp.innerHTML + message[index];
-                        index++;
-                        setTimeout(displayNextLetter, 30);
-                    } else {
-                        temp.removeAttribute('id')
-                        sendbtn.disabled = false
-                        userinputarea.disabled = false
-                    }
+            </div>`;
+            let tempMessage = document.getElementById('temp-message');
+            let index = 0;
+
+            function displayNextLetter() {
+                if (index < message.length) {
+                    tempMessage.innerHTML += message[index++];
+                    setTimeout(displayNextLetter, 30);
+                } else {
+                    tempMessage.removeAttribute('id');
                 }
-                displayNextLetter()
-                scrollToBottom()
-
             }
-            else {
-                let message = json.message
-                upperdiv.innerHTML = upperdiv.innerHTML +
-                    `<div class="message">
-                <div class="appmessagediv">
-                    <div class="appmessage"  style="border: 1px solid red;">
-                      ${message}
+            displayNextLetter();
+        }
 
+        // Function to display errors
+        function displayError(message) {
+            let upperdiv = document.getElementById('upperid');
+            upperdiv.innerHTML += `<div class="message">
+                <div class="appmessagediv">
+                    <div class="appmessage" style="border: 1px solid red;">
+                        ${message}
                     </div>
                 </div>
-            </div>`
-                sendbtn.disabled = false
-                userinputarea.disabled = false
-            }
-
-            scrollToBottom()
-
-
-        } 
+            </div>`;
+        }
     </script>
 </body>
-
 </html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Response - Autochat Bot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
+    <link rel="stylesheet" href="styles.css"> <!-- Assuming you have extracted CSS to styles.css -->
+</head>
+<body>
+    <nav class="bg-white border-gray-200 dark:bg-gray-900">
+        <!-- Navbar content same as index.html -->
+    </nav>
+    <div class="container">
+        <div class="box">
+            <div class="upper" id="upperid">
+                <!-- Dynamic messages will be inserted here -->
+                {% for message in messages %}
+                    <div class="message {{ 'usermessagediv' if message.role == 'user' else 'appmessagediv' }}">
+                        <div class="{{ 'usermessage' if message.role == 'user' else 'appmessage' }}">
+                            {{ message.content }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- The bottom bar with input and file upload can be omitted if not needed -->
+        </div>
+    </div>
+    <script>
+        // Scroll to bottom to show latest messages
+        window.onload = function() {
+            var div = document.getElementById("upperid");
+            div.scrollTop = div.scrollHeight;
+        };
+    </script>
+</body>
+</html>
