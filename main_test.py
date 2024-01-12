@@ -4,7 +4,9 @@ from flask import Flask, render_template, jsonify, request, session
 from flask_session import Session
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 import os
 from flask import Flask, render_template,jsonify,request
 from flask_cors import CORS
@@ -14,7 +16,6 @@ from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryBufferMemory
-openai.api_key = os.getenv('OPENAI_API_KEY')
 llm = OpenAI(openai_api_key=os.getenv('OPENAI_API_KEY'))
 memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
 app = Flask(__name__)
@@ -47,7 +48,7 @@ def upload_file():
         file.save(file_path)
 
         try:
-            uploaded_file = openai.File.create(file=open(file_path, 'rb'), purpose='assistants')
+            uploaded_file = client.files.create(file=open(file_path, 'rb'), purpose='assistants')
             session['file_id'] = uploaded_file.id  # Save the file id in the session
             return jsonify({"response": True, "file_id": uploaded_file.id})
         except Exception as e:

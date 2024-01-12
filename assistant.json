@@ -1,0 +1,14 @@
+{
+  "assistantId": "asst_LMRIDuBnSeDrfYIyBbe10n5U",
+  "name": "Murder mystery helper",
+  "instructions": "You're an AI assistant, helping solve every task provided by the user. You will recieve knowledge from retrieval which you will use to answer the question",
+  "tools": [
+    {
+      "type": "retrieval"
+    }
+  ],
+  "model": "gpt-4-1106-preview",
+  "file_ids": [
+    "file-oaOZTQumPRSmYAjYzkPPEtdA"
+  ]
+}

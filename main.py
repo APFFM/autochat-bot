@@ -1,32 +1,37 @@
-from dotenv import load_dotenv
-load_dotenv()
-from flask import Flask, render_template,jsonify,request,session
-from flask_session import Session  # This is the correct import for Session
-from flask_cors import CORS
-import requests,openai,os
-from dotenv.main import load_dotenv
-from langchain.llms import OpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationSummaryBufferMemory
-from werkzeug.utils import secure_filename
 import os
-openai_api_key = os.getenv('OPENAI_API_KEY')
-llm = OpenAI()
-memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
+from flask import Flask, render_template, jsonify, request, session
+from flask_session import Session
+from flask_cors import CORS
+import openai
+from dotenv import load_dotenv
+from langchain.llms import OpenAI
+from langchain.memory import ConversationSummaryBufferMemory
+from langchain.chains import ConversationChain
+from werkzeug.utils import secure_filename
+
+# Load environment variables
+load_dotenv()
+
+# Flask app setup
 app = Flask(__name__)
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['SESSION_TYPE'] = 'filesystem'
-app.secret_key = os.urandom(24)  # You should set a secret key for session management
+app.secret_key = os.urandom(24)
 Session(app)
 
+# OpenAI API setup
+openai_api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=openai_api_key)
+memory = ConversationSummaryBufferMemory(llm=client, max_token_limit=100)
+
+# Define allowed file extension
 ALLOWED_EXTENSIONS = {'pdf'}
 
-
+# Helper function to check file extension
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
- 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -44,59 +49,55 @@ def upload_file():
         file.save(file_path)
 
         try:
-            uploaded_file = openai.File.create(file=open(file_path, 'rb'), purpose='assistants')
+            # Process the file with OpenAI API
+            uploaded_file = client.files.create(file=open(file_path, 'rb'), purpose='assitants')
             session['file_id'] = uploaded_file.id  # Save the file id in the session
             return jsonify({"response": True, "file_id": uploaded_file.id})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-@app.route('/data', methods=['POST'])
-def get_data():
+    
+@app.route('/ask', methods=['POST'])
+def ask():
+    # Get the user query from the incoming JSON data
     data = request.get_json()
-    user_input = data['data']
-    # Retrieve the file id from the session
+    user_query = data.get('query')
+
+    # Retrieve the assistant_id stored in the session
+    assistant_id = session.get('assistant_id')
+    if not assistant_id:
+        return jsonify({"error": "Assistant ID not found in session"}), 400
+
+    # Retrieve the file_id stored in the session
     file_id = session.get('file_id')
+    if not file_id:
+        return jsonify({"error": "File ID not found in session"}), 400
 
     try:
-        
-# Add the file to the assistant
-        assistant = llm.beta.assistants.create(
-            instructions="You are a knowledge support chatbot. Use your knowledge base to best respond to customer queries.",
-            model="gpt-4-1106-preview",
-            tools=[{"type": "retrieval"}],
-            file_ids=[file.id]
-        )
-        # Create a thread for the conversation
-        thread = openai.Thread.create()
+        # Create a thread for this assistant session
+        thread = openai.Thread.create(assistant_id=assistant_id)
 
-        # Create a message in the thread
-        message = openai.Message.create(
+        # Send the user's query to the assistant
+        message_response = openai.Message.create(
             thread_id=thread.id,
             role="user",
-            content=user_input,
+            content=user_query,
             file_ids=[file_id]
         )
 
-        # Assuming we're immediately getting the response (synchronous interaction)
-        # If the interaction is asynchronous, you would need to poll for the response
-        assistant_response = openai.Message.create(
-            thread_id=thread.id,
-            role="assistant",
-            content="Explain and summarize the pdf in your context",
-            file_ids=[file_id]
-        )
+        # Retrieve the assistant's response from the message response
+        assistant_response = message_response.get('data')
 
-        #adding conversation
-        conversation = ConversationChain(llm=llm,memory=memory)
-
-        # Extract the assistant's response message
-        output = assistant_response['choices'][0]['message']['content']
-        memory.save_context({"input": user_input}, {"output": output})
-        return jsonify({"response":True,"content":output})
+        # If the response is successful, extract the content from the response
+        if assistant_response:
+            response_content = assistant_response['choices'][0]['message']['content']
+            return jsonify({"response": response_content})
+        else:
+            return jsonify({"error": "Failed to get a valid response from the assistant"}), 500
     except Exception as e:
-        print(e)
-        error_message = f'Error: {str(e)}'
-        return jsonify({"message":error_message,"response":False})
+        # If an error occurs, return the error message
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)

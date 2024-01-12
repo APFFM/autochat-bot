@@ -1,0 +1,88 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot Interface with PDF Upload</title>
+  <style>
+    #chat {
+      display: flex;
+      flex-direction: column;
+    }
+    #messages {
+      height: 300px;
+      border: 1px solid black;
+      margin-bottom: 10px;
+      padding: 5px;
+      overflow-y: scroll;
+    }
+    textarea {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat with AI Assistant</h1>
+  <div id="chat">
+    <div id="messages"></div>
+    <textarea id="messageInput" rows="3"></textarea>
+    <button id="sendMessage">Send</button>
+  </div>
+
+  <h2>Upload a PDF</h2>
+  <input type="file" id="pdfInput" accept=".pdf" />
+  <button id="uploadPdf">Upload PDF</button>
+  
+  <script>
+    const messages = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessage = document.getElementById('sendMessage');
+    const pdfInput = document.getElementById('pdfInput');
+    const uploadPdf = document.getElementById('uploadPdf');
+
+    const ws = new WebSocket('ws://localhost:3000');
+
+    ws.onopen = function() {
+      console.log('Connected to the WebSocket server');
+    };
+
+    ws.onmessage = function(event) {
+      messages.innerHTML += `<div>${event.data}</div>`;
+    };
+
+    sendMessage.onclick = function() {
+      const message = messageInput.value;
+      ws.send(message);
+      messageInput.value = '';
+    };
+
+    uploadPdf.onclick = async function() {
+      const file = pdfInput.files[0];
+      if (!file) {
+        alert('Please select a PDF file to upload.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (response.ok) {
+          console.log('PDF uploaded, file ID:', result.fileId);
+          // Send the file ID to the WebSocket server
+          ws.send(JSON.stringify({ action: 'pdfUploaded', fileId: result.fileId }));
+        } else {
+          console.error('Error uploading PDF:', result.message);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    };
+  </script>
+</body>
+</html>
