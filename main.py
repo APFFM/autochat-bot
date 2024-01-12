@@ -1,12 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
-from flask import Flask, render_template, jsonify, request, session
-from flask_session import Session
-from werkzeug.utils import secure_filename
-from flask_cors import CORS
-import openai
-import os
-from flask import Flask, render_template,jsonify,request
+from flask import Flask, render_template,jsonify,request,session
+from flask_session import Session  # This is the correct import for Session
 from flask_cors import CORS
 import requests,openai,os
 from dotenv.main import load_dotenv
@@ -14,7 +9,9 @@ from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryBufferMemory
-openai.api_key = os.getenv('OPENAI_API_KEY')
+from werkzeug.utils import secure_filename
+import os
+openai_api_key = os.getenv('OPENAI_API_KEY')
 llm = OpenAI()
 memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
 app = Flask(__name__)
@@ -57,10 +54,12 @@ def upload_file():
 def get_data():
     data = request.get_json()
     user_input = data['data']
-    file_id = session.get('file_id')  # Retrieve the file id from session
+    # Retrieve the file id from the session
+    file_id = session.get('file_id')
 
     try:
-        # Add the file to the assistant
+        
+# Add the file to the assistant
         assistant = llm.beta.assistants.create(
             instructions="You are a knowledge support chatbot. Use your knowledge base to best respond to customer queries.",
             model="gpt-4-1106-preview",
@@ -93,7 +92,7 @@ def get_data():
         # Extract the assistant's response message
         output = assistant_response['choices'][0]['message']['content']
         memory.save_context({"input": user_input}, {"output": output})
-        return jsonify({"response":True,"message":output})
+        return jsonify({"response":True,"content":output})
     except Exception as e:
         print(e)
         error_message = f'Error: {str(e)}'
@@ -101,4 +100,3 @@ def get_data():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
